@@ -23,15 +23,10 @@ import anki_vector
 
 
 def main():
-    with anki_vector.Robot(requires_behavior_control=False) as robot:
-        battery_state = robot.get_battery_state()
-        if battery_state:
-            print("Battery Voltage: {0}".format(battery_state.battery_volts))
-            print("Battery Level: {0}".format(battery_state.battery_level))
-            print("Charging: {0}".format(battery_state.is_charging))
-            print("Is Home: {0}".format(battery_state.is_on_charger_platform))
-            print("Suggested Charge time (s): {0}".format(battery_state.suggested_charger_sec))
-            print("Is Calm: {0}".format(robot.status.is_in_calm_power_mode))
+    with anki_vector.Robot(enable_camera_feed=True) as robot:
+        print("Vector's taking a picture...")
+        image = robot.camera.latest_image
+        image.show()
 
 if __name__ == "__main__":
     main()
