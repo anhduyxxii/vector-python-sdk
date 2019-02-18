@@ -14,23 +14,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tell Vector to drive on and off the charger.
+"""Hello World
+
+Make Vector say 'Hello World' in this simple Vector SDK example program.
 """
 
-import anki_vector
-
+import sys
+from datetime import datetime
 
 def main():
-    args = anki_vector.util.parse_command_args()
+	print(f'Good {get_part_of_day()}!')
 
-    with anki_vector.Robot(args.serial) as robot:
-        print("Drive Vector off of charger...")
-        robot.behavior.drive_off_charger()
+def get_part_of_day():
+  hour = datetime.now().hour
+  return (
+    "morning" if 5 <= hour <= 11
+    else
+    "afternoon" if 12 <= hour <= 17
+    else
+    "evening" if 18 <= hour <= 22
+    else
+    "night"
+  )
 
-        print("Drive Vector onto charger...")
-        robot.behavior.drive_on_charger()
-
-        print("Done tasks")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
