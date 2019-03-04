@@ -28,9 +28,9 @@ def main():
         if battery_state:
             print("Battery Voltage: {0}".format(battery_state.battery_volts))
             print("Battery Level: {0}".format(battery_state.battery_level))
+            print("Suggested Charge time (s): {0}".format(battery_state.suggested_charger_sec))
             print("Charging: {0}".format(battery_state.is_charging))
             print("Is Home: {0}".format(battery_state.is_on_charger_platform))
-            print("Suggested Charge time (s): {0}".format(battery_state.suggested_charger_sec))
             print("Is Calm: {0}".format(robot.status.is_in_calm_power_mode))
 
 if __name__ == "__main__":
