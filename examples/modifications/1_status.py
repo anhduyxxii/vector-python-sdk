@@ -26,12 +26,11 @@ def main():
     with anki_vector.Robot(requires_behavior_control=False) as robot:
         battery_state = robot.get_battery_state()
         if battery_state:
-            print("Battery Voltage: {0}".format(battery_state.battery_volts))
-            print("Battery Level: {0}".format(battery_state.battery_level))
-            print("Suggested Charge time (s): {0}".format(battery_state.suggested_charger_sec))
-            print("Charging: {0}".format(battery_state.is_charging))
-            print("Is Home: {0}".format(battery_state.is_on_charger_platform))
-            print("Is Calm: {0}".format(robot.status.is_in_calm_power_mode))
+            print("Voltage: {0}".format(battery_state.battery_volts))
+            print("Level: {0}".format(battery_state.battery_level))
+            if battery_state.is_charging: print("Is Charging")
+            print("Is Home") if battery_state.is_on_charger_platform else print("Is not Home")
+            print("Is Sleeping") if robot.status.is_in_calm_power_mode else print("Is Awake")
 
 if __name__ == "__main__":
     main()
