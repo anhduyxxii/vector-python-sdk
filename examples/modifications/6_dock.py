@@ -16,7 +16,7 @@
 
 """Tell Vector to drive on and off the charger.
 """
-
+import time
 import anki_vector
 
 
@@ -24,9 +24,19 @@ def main():
     args = anki_vector.util.parse_command_args()
 
     with anki_vector.Robot(args.serial) as robot:
-        print("Drive Vector onto charger...")
+        print("Vector is Docked") if robot.status.is_on_charger else print("Vector is off Dock")
+        time.sleep(1)
+        print("Driving Vector onto Dock...")
         robot.behavior.drive_on_charger()
+        print("Done Docking")
+        time.sleep(1)
+        print("Vector is Docked") if robot.status.is_on_charger else print("Vector is off Dock")
+        time.sleep(3)
 
+        battery_levels = {1: "LOW", 2: "NOMINAL", 3: "FULL"}
+        battery_state = robot.get_battery_state()
+        if battery_state:
+            print("Battery: {0}(V) - {1} {2}".format(round(battery_state.battery_volts, 2), battery_levels[battery_state.battery_level], "(Charging...)" if robot.status.is_charging else ""))
         print("End Task")
 
 if __name__ == '__main__':
