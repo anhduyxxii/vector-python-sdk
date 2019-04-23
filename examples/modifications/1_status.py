@@ -24,12 +24,11 @@ import anki_vector
 
 def main():
     with anki_vector.Robot(requires_behavior_control=False) as robot:
+        battery_levels = {1: "LOW", 2: "NOMINAL", 3: "FULL"}
         battery_state = robot.get_battery_state()
         if battery_state:
-            print("Voltage: {0}".format(battery_state.battery_volts))
-            print("Level: {0}".format(battery_state.battery_level))
-            if battery_state.is_charging: print("Is Charging")
-            print("Is Home") if battery_state.is_on_charger_platform else print("Is not Home")
+            print("Battery: {0}(V) - {1} {2}".format(round(battery_state.battery_volts, 2), battery_levels[battery_state.battery_level], "(Charging...)" if robot.status.is_charging else ""))
+            print("Is Docked") if robot.status.is_on_charger else print("Is off Dock")
             print("Is Sleeping") if robot.status.is_in_calm_power_mode else print("Is Awake")
 
 if __name__ == "__main__":
