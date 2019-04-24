@@ -24,14 +24,12 @@ def main():
     args = anki_vector.util.parse_command_args()
 
     with anki_vector.Robot(args.serial) as robot:
-        print("Vector is Docked") if robot.status.is_on_charger else print("Vector is off Dock")
+        print("Vector is now Docked") if robot.status.is_on_charger else print("Vector is now off Dock")
         time.sleep(1)
         print("Driving Vector off Dock...")
         robot.behavior.drive_off_charger()
-        print("Done Undocking")
-        time.sleep(1)
-        print("Vector is Docked") if robot.status.is_on_charger else print("Vector is off Dock")
-        time.sleep(3)
+        print("Vector is now Docked") if robot.status.is_on_charger else print("Vector is now off Dock")
+        time.sleep(2)
         print("End Task")
 
 if __name__ == '__main__':
