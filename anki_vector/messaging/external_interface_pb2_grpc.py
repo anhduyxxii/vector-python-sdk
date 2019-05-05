@@ -33,6 +33,11 @@ class ExternalInterfaceStub(object):
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.DriveWheelsRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.DriveWheelsResponse.FromString,
         )
+    self.PlayAnimationTrigger = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/PlayAnimationTrigger',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.PlayAnimationTriggerRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PlayAnimationResponse.FromString,
+        )
     self.PlayAnimation = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/PlayAnimation',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.PlayAnimationRequest.SerializeToString,
@@ -42,6 +47,11 @@ class ExternalInterfaceStub(object):
         '/Anki.Vector.external_interface.ExternalInterface/ListAnimations',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationsRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationsResponse.FromString,
+        )
+    self.ListAnimationTriggers = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/ListAnimationTriggers',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationTriggersRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationTriggersResponse.FromString,
         )
     self.MoveHead = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/MoveHead',
@@ -53,6 +63,11 @@ class ExternalInterfaceStub(object):
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.MoveLiftRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.MoveLiftResponse.FromString,
         )
+    self.StopAllMotors = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/StopAllMotors',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.StopAllMotorsRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.StopAllMotorsResponse.FromString,
+        )
     self.DisplayFaceImageRGB = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/DisplayFaceImageRGB',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.DisplayFaceImageRGBRequest.SerializeToString,
@@ -62,6 +77,11 @@ class ExternalInterfaceStub(object):
         '/Anki.Vector.external_interface.ExternalInterface/EventStream',
         request_serializer=anki__vector_dot_messaging_dot_shared__pb2.EventRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_shared__pb2.EventResponse.FromString,
+        )
+    self.ExternalAudioStreamPlayback = channel.stream_stream(
+        '/Anki.Vector.external_interface.ExternalInterface/ExternalAudioStreamPlayback',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.ExternalAudioStreamRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.ExternalAudioStreamResponse.FromString,
         )
     self.BehaviorControl = channel.stream_stream(
         '/Anki.Vector.external_interface.ExternalInterface/BehaviorControl',
@@ -128,6 +148,16 @@ class ExternalInterfaceStub(object):
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.EnableImageStreamingRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.EnableImageStreamingResponse.FromString,
         )
+    self.IsImageStreamingEnabled = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/IsImageStreamingEnabled',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.IsImageStreamingEnabledRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.IsImageStreamingEnabledResponse.FromString,
+        )
+    self.CancelActionByIdTag = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/CancelActionByIdTag',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.CancelActionByIdTagRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.CancelActionByIdTagResponse.FromString,
+        )
     self.GoToPose = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/GoToPose',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.GoToPoseRequest.SerializeToString,
@@ -147,6 +177,21 @@ class ExternalInterfaceStub(object):
         '/Anki.Vector.external_interface.ExternalInterface/DriveOnCharger',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.DriveOnChargerRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.DriveOnChargerResponse.FromString,
+        )
+    self.FindFaces = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/FindFaces',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.FindFacesRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.FindFacesResponse.FromString,
+        )
+    self.LookAroundInPlace = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/LookAroundInPlace',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.LookAroundInPlaceRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.LookAroundInPlaceResponse.FromString,
+        )
+    self.RollBlock = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/RollBlock',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.RollBlockRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.RollBlockResponse.FromString,
         )
     self.PhotosInfo = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/PhotosInfo',
@@ -188,6 +233,41 @@ class ExternalInterfaceStub(object):
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.SetLiftHeightRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.SetLiftHeightResponse.FromString,
         )
+    self.TurnTowardsFace = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/TurnTowardsFace',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.TurnTowardsFaceRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.TurnTowardsFaceResponse.FromString,
+        )
+    self.GoToObject = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/GoToObject',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.GoToObjectRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.GoToObjectResponse.FromString,
+        )
+    self.RollObject = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/RollObject',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.RollObjectRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.RollObjectResponse.FromString,
+        )
+    self.PopAWheelie = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/PopAWheelie',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.PopAWheelieRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PopAWheelieResponse.FromString,
+        )
+    self.PickupObject = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/PickupObject',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.PickupObjectRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PickupObjectResponse.FromString,
+        )
+    self.PlaceObjectOnGroundHere = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/PlaceObjectOnGroundHere',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.PlaceObjectOnGroundHereRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PlaceObjectOnGroundHereResponse.FromString,
+        )
+    self.SetMasterVolume = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/SetMasterVolume',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.MasterVolumeRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.MasterVolumeResponse.FromString,
+        )
     self.UserAuthentication = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/UserAuthentication',
         request_serializer=anki__vector_dot_messaging_dot_shared__pb2.UserAuthenticationRequest.SerializeToString,
@@ -202,11 +282,6 @@ class ExternalInterfaceStub(object):
         '/Anki.Vector.external_interface.ExternalInterface/VersionState',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.VersionStateRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.VersionStateResponse.FromString,
-        )
-    self.NetworkState = channel.unary_unary(
-        '/Anki.Vector.external_interface.ExternalInterface/NetworkState',
-        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.NetworkStateRequest.SerializeToString,
-        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.NetworkStateResponse.FromString,
         )
     self.SayText = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/SayText',
@@ -273,6 +348,11 @@ class ExternalInterfaceStub(object):
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.CameraFeedRequest.SerializeToString,
         response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.CameraFeedResponse.FromString,
         )
+    self.CaptureSingleImage = channel.unary_unary(
+        '/Anki.Vector.external_interface.ExternalInterface/CaptureSingleImage',
+        request_serializer=anki__vector_dot_messaging_dot_messages__pb2.CaptureSingleImageRequest.SerializeToString,
+        response_deserializer=anki__vector_dot_messaging_dot_messages__pb2.CaptureSingleImageResponse.FromString,
+        )
     self.SetEyeColor = channel.unary_unary(
         '/Anki.Vector.external_interface.ExternalInterface/SetEyeColor',
         request_serializer=anki__vector_dot_messaging_dot_messages__pb2.SetEyeColorRequest.SerializeToString,
@@ -311,6 +391,13 @@ class ExternalInterfaceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def PlayAnimationTrigger(self, request, context):
+    """Requests that Vector play an animation trigger.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def PlayAnimation(self, request, context):
     """Requests that Vector play an animation.
     """
@@ -320,6 +407,13 @@ class ExternalInterfaceServicer(object):
 
   def ListAnimations(self, request, context):
     """Constructs and returns a list of animations.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ListAnimationTriggers(self, request, context):
+    """Constructs and returns a list of animation triggers.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -339,6 +433,13 @@ class ExternalInterfaceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def StopAllMotors(self, request, context):
+    """Stop all motor commands requested: MoveHead, MoveLift and DriveWheels.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def DisplayFaceImageRGB(self, request, context):
     """Sets screen (Vector's face) to a solid color.
     """
@@ -348,6 +449,13 @@ class ExternalInterfaceServicer(object):
 
   def EventStream(self, request, context):
     """Streaming events endpoint
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ExternalAudioStreamPlayback(self, request_iterator, context):
+    """Play audio using Vector's speaker
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -444,6 +552,20 @@ class ExternalInterfaceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def IsImageStreamingEnabled(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def CancelActionByIdTag(self, request, context):
+    """Cancel action by id
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def GoToPose(self, request, context):
     """Tells Vector to drive to the specified pose and orientation.
     """
@@ -467,6 +589,27 @@ class ExternalInterfaceServicer(object):
 
   def DriveOnCharger(self, request, context):
     """Drive Vector onto the charger.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def FindFaces(self, request, context):
+    """Make Vector look for faces by turning and angling his head
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def LookAroundInPlace(self, request, context):
+    """Make Vector look around in place by turning and moving his head
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def RollBlock(self, request, context):
+    """Make Vector roll his block, regardless of relative position and orientation
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -528,6 +671,55 @@ class ExternalInterfaceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def TurnTowardsFace(self, request, context):
+    """Tell Vector to turn towards this face.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def GoToObject(self, request, context):
+    """Tell Vector to drive to the specified object.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def RollObject(self, request, context):
+    """Tell Vector to roll his cube.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def PopAWheelie(self, request, context):
+    """Tell Vector to "pop a wheelie" using his cube.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def PickupObject(self, request, context):
+    """Instruct the robot to pick up the supplied object.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def PlaceObjectOnGroundHere(self, request, context):
+    """Ask Vector to place the object he is carrying on the ground at the current location.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def SetMasterVolume(self, request, context):
+    """Set the Robot's master volume
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def UserAuthentication(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -544,13 +736,6 @@ class ExternalInterfaceServicer(object):
 
   def VersionState(self, request, context):
     """Get the versioning information for Vector.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def NetworkState(self, request, context):
-    """Get the network information for Vector.
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -656,6 +841,13 @@ class ExternalInterfaceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def CaptureSingleImage(self, request, context):
+    """Request a single image to be captured and sent from the robot.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def SetEyeColor(self, request, context):
     """Set Vector's eye color.
     """
@@ -664,8 +856,8 @@ class ExternalInterfaceServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def NavMapFeed(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Stream navigation map data.
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -688,6 +880,11 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.DriveWheelsRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.DriveWheelsResponse.SerializeToString,
       ),
+      'PlayAnimationTrigger': grpc.unary_unary_rpc_method_handler(
+          servicer.PlayAnimationTrigger,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PlayAnimationTriggerRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.PlayAnimationResponse.SerializeToString,
+      ),
       'PlayAnimation': grpc.unary_unary_rpc_method_handler(
           servicer.PlayAnimation,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PlayAnimationRequest.FromString,
@@ -697,6 +894,11 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           servicer.ListAnimations,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationsRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationsResponse.SerializeToString,
+      ),
+      'ListAnimationTriggers': grpc.unary_unary_rpc_method_handler(
+          servicer.ListAnimationTriggers,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationTriggersRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.ListAnimationTriggersResponse.SerializeToString,
       ),
       'MoveHead': grpc.unary_unary_rpc_method_handler(
           servicer.MoveHead,
@@ -708,6 +910,11 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.MoveLiftRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.MoveLiftResponse.SerializeToString,
       ),
+      'StopAllMotors': grpc.unary_unary_rpc_method_handler(
+          servicer.StopAllMotors,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.StopAllMotorsRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.StopAllMotorsResponse.SerializeToString,
+      ),
       'DisplayFaceImageRGB': grpc.unary_unary_rpc_method_handler(
           servicer.DisplayFaceImageRGB,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.DisplayFaceImageRGBRequest.FromString,
@@ -717,6 +924,11 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           servicer.EventStream,
           request_deserializer=anki__vector_dot_messaging_dot_shared__pb2.EventRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_shared__pb2.EventResponse.SerializeToString,
+      ),
+      'ExternalAudioStreamPlayback': grpc.stream_stream_rpc_method_handler(
+          servicer.ExternalAudioStreamPlayback,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.ExternalAudioStreamRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.ExternalAudioStreamResponse.SerializeToString,
       ),
       'BehaviorControl': grpc.stream_stream_rpc_method_handler(
           servicer.BehaviorControl,
@@ -783,6 +995,16 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.EnableImageStreamingRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.EnableImageStreamingResponse.SerializeToString,
       ),
+      'IsImageStreamingEnabled': grpc.unary_unary_rpc_method_handler(
+          servicer.IsImageStreamingEnabled,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.IsImageStreamingEnabledRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.IsImageStreamingEnabledResponse.SerializeToString,
+      ),
+      'CancelActionByIdTag': grpc.unary_unary_rpc_method_handler(
+          servicer.CancelActionByIdTag,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.CancelActionByIdTagRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.CancelActionByIdTagResponse.SerializeToString,
+      ),
       'GoToPose': grpc.unary_unary_rpc_method_handler(
           servicer.GoToPose,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.GoToPoseRequest.FromString,
@@ -802,6 +1024,21 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           servicer.DriveOnCharger,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.DriveOnChargerRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.DriveOnChargerResponse.SerializeToString,
+      ),
+      'FindFaces': grpc.unary_unary_rpc_method_handler(
+          servicer.FindFaces,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.FindFacesRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.FindFacesResponse.SerializeToString,
+      ),
+      'LookAroundInPlace': grpc.unary_unary_rpc_method_handler(
+          servicer.LookAroundInPlace,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.LookAroundInPlaceRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.LookAroundInPlaceResponse.SerializeToString,
+      ),
+      'RollBlock': grpc.unary_unary_rpc_method_handler(
+          servicer.RollBlock,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.RollBlockRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.RollBlockResponse.SerializeToString,
       ),
       'PhotosInfo': grpc.unary_unary_rpc_method_handler(
           servicer.PhotosInfo,
@@ -843,6 +1080,41 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.SetLiftHeightRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.SetLiftHeightResponse.SerializeToString,
       ),
+      'TurnTowardsFace': grpc.unary_unary_rpc_method_handler(
+          servicer.TurnTowardsFace,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.TurnTowardsFaceRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.TurnTowardsFaceResponse.SerializeToString,
+      ),
+      'GoToObject': grpc.unary_unary_rpc_method_handler(
+          servicer.GoToObject,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.GoToObjectRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.GoToObjectResponse.SerializeToString,
+      ),
+      'RollObject': grpc.unary_unary_rpc_method_handler(
+          servicer.RollObject,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.RollObjectRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.RollObjectResponse.SerializeToString,
+      ),
+      'PopAWheelie': grpc.unary_unary_rpc_method_handler(
+          servicer.PopAWheelie,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PopAWheelieRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.PopAWheelieResponse.SerializeToString,
+      ),
+      'PickupObject': grpc.unary_unary_rpc_method_handler(
+          servicer.PickupObject,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PickupObjectRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.PickupObjectResponse.SerializeToString,
+      ),
+      'PlaceObjectOnGroundHere': grpc.unary_unary_rpc_method_handler(
+          servicer.PlaceObjectOnGroundHere,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.PlaceObjectOnGroundHereRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.PlaceObjectOnGroundHereResponse.SerializeToString,
+      ),
+      'SetMasterVolume': grpc.unary_unary_rpc_method_handler(
+          servicer.SetMasterVolume,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.MasterVolumeRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.MasterVolumeResponse.SerializeToString,
+      ),
       'UserAuthentication': grpc.unary_unary_rpc_method_handler(
           servicer.UserAuthentication,
           request_deserializer=anki__vector_dot_messaging_dot_shared__pb2.UserAuthenticationRequest.FromString,
@@ -857,11 +1129,6 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           servicer.VersionState,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.VersionStateRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.VersionStateResponse.SerializeToString,
-      ),
-      'NetworkState': grpc.unary_unary_rpc_method_handler(
-          servicer.NetworkState,
-          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.NetworkStateRequest.FromString,
-          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.NetworkStateResponse.SerializeToString,
       ),
       'SayText': grpc.unary_unary_rpc_method_handler(
           servicer.SayText,
@@ -927,6 +1194,11 @@ def add_ExternalInterfaceServicer_to_server(servicer, server):
           servicer.CameraFeed,
           request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.CameraFeedRequest.FromString,
           response_serializer=anki__vector_dot_messaging_dot_messages__pb2.CameraFeedResponse.SerializeToString,
+      ),
+      'CaptureSingleImage': grpc.unary_unary_rpc_method_handler(
+          servicer.CaptureSingleImage,
+          request_deserializer=anki__vector_dot_messaging_dot_messages__pb2.CaptureSingleImageRequest.FromString,
+          response_serializer=anki__vector_dot_messaging_dot_messages__pb2.CaptureSingleImageResponse.SerializeToString,
       ),
       'SetEyeColor': grpc.unary_unary_rpc_method_handler(
           servicer.SetEyeColor,

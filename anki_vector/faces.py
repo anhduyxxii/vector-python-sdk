@@ -21,7 +21,7 @@ The :class:`anki_vector.world.World` object keeps track of faces the robot curre
 knows about, along with those that are currently visible to the camera.
 
 Each face is assigned a :class:`Face` object, which generates a number of
-observable events whenever the face is observed, has its ID updated.
+observable events whenever the face is observed or when the face id is updated.
 """
 
 # __all__ should order by constants, event classes, other classes, functions.
@@ -32,6 +32,152 @@ from typing import List
 
 from . import connection, util, objects, events
 from .messaging import protocol
+
+#: Length of time in seconds to go without receiving an observed event before
+#: assuming that Vector can no longer see a face.
+FACE_VISIBILITY_TIMEOUT = objects.OBJECT_VISIBILITY_TIMEOUT
+
+
+class EvtFaceObserved():  # pylint: disable=too-few-public-methods
+    """Triggered whenever a face is visually identified by the robot.
+
+    A stream of these events are produced while a face is visible to the robot.
+    Each event has an updated image_rect field.
+
+    See EvtFaceAppeared if you only want to know when a face first
+    becomes visible.
+
+    .. testcode::
+
+        import time
+
+        import anki_vector
+        from anki_vector.events import Events
+        from anki_vector.util import degrees
+
+        def handle_face_observed(robot, event_type, event):
+            # This will be called whenever an EvtFaceObserved is dispatched -
+            # whenever an face comes into view.
+            print(f"--------- Vector observed an face --------- \\n{event.face}")
+
+        with anki_vector.Robot(enable_face_detection = True,
+                               show_viewer=True) as robot:
+            robot.events.subscribe(handle_face_observed, Events.face_observed)
+
+            # If necessary, move Vector's Head and Lift in position to see a face
+            robot.behavior.set_lift_height(0.0)
+            robot.behavior.set_head_angle(degrees(45.0))
+
+            time.sleep(5.0)
+
+    :param face: The Face instance that was observed
+    :param image_rect: An :class:`anki_vector.util.ImageRect`: defining where the face is within Vector's camera view
+    :param name: The name of the face
+    :param pose: The :class:`anki_vector.util.Pose`: defining the position and rotation of the face
+    """
+
+    def __init__(self, face, image_rect: util.ImageRect, name, pose: util.Pose):
+        self.face = face
+        self.image_rect = image_rect
+        self.name = name
+        self.pose = pose
+
+
+class EvtFaceAppeared():  # pylint: disable=too-few-public-methods
+    """Triggered whenever a face is first visually identified by a robot.
+
+    This differs from EvtFaceObserved in that it's only triggered when
+    a face initially becomes visible.  If it disappears for more than
+    FACE_VISIBILITY_TIMEOUT seconds and then is seen again, a
+    EvtFaceDisappeared will be dispatched, followed by another
+    EvtFaceAppeared event.
+
+    For continuous tracking information about a visible face, see
+    EvtFaceObserved.
+
+    .. testcode::
+
+        import time
+
+        import anki_vector
+        from anki_vector.events import Events
+        from anki_vector.util import degrees
+
+        def handle_face_appeared(robot, event_type, event):
+            # This will be called whenever an EvtFaceAppeared is dispatched -
+            # whenever an face comes into view.
+            print(f"--------- Vector started seeing an face --------- \\n{event.face}")
+
+
+        def handle_face_disappeared(robot, event_type, event):
+            # This will be called whenever an EvtFaceDisappeared is dispatched -
+            # whenever an face goes out of view.
+            print(f"--------- Vector stopped seeing an face --------- \\n{event.face}")
+
+
+        with anki_vector.Robot(enable_face_detection = True,
+                               show_viewer=True) as robot:
+            robot.events.subscribe(handle_face_appeared, Events.face_appeared)
+            robot.events.subscribe(handle_face_disappeared, Events.face_disappeared)
+
+            # If necessary, move Vector's Head and Lift in position to see a face
+            robot.behavior.set_lift_height(0.0)
+            robot.behavior.set_head_angle(degrees(45.0))
+
+            time.sleep(5.0)
+
+    :param face:'The Face instance that appeared
+    :param image_rect: An :class:`anki_vector.util.ImageRect`: defining where the face is within Vector's camera view
+    :param name: The name of the face
+    :param pose: The :class:`anki_vector.util.Pose`: defining the position and rotation of the face
+    """
+
+    def __init__(self, face, image_rect: util.ImageRect, name, pose: util.Pose):
+        self.face = face
+        self.image_rect = image_rect
+        self.name = name
+        self.pose = pose
+
+
+class EvtFaceDisappeared():  # pylint: disable=too-few-public-methods
+    """Triggered whenever a face that was previously being observed is no longer visible.
+
+    .. testcode::
+
+        import time
+
+        import anki_vector
+        from anki_vector.events import Events
+        from anki_vector.util import degrees
+
+        def handle_face_appeared(robot, event_type, event):
+            # This will be called whenever an EvtFaceAppeared is dispatched -
+            # whenever an face comes into view.
+            print(f"--------- Vector started seeing an face --------- \\n{event.face}")
+
+
+        def handle_face_disappeared(robot, event_type, event):
+            # This will be called whenever an EvtFaceDisappeared is dispatched -
+            # whenever an face goes out of view.
+            print(f"--------- Vector stopped seeing an face --------- \\n{event.face}")
+
+
+        with anki_vector.Robot(enable_face_detection = True,
+                               show_viewer=True) as robot:
+            robot.events.subscribe(handle_face_appeared, Events.face_appeared)
+            robot.events.subscribe(handle_face_disappeared, Events.face_disappeared)
+
+            # If necessary, move Vector's Head and Lift in position to see a face
+            robot.behavior.set_lift_height(0.0)
+            robot.behavior.set_head_angle(degrees(45.0))
+
+            time.sleep(5.0)
+
+    :param face: The Face instance that is no longer being observed
+    """
+
+    def __init__(self, face):
+        self.face = face
 
 
 class Expression(Enum):
@@ -98,13 +244,11 @@ class Face(objects.ObservableObject):
 
         self._on_observed(pose, image_rect, instantiation_timestamp)
 
-        self._robot.events.subscribe(
-            self._on_face_observed,
-            events.Events.robot_observed_face)
+        self._robot.events.subscribe(self._on_face_observed,
+                                     events.Events.robot_observed_face)
 
-        self._robot.events.subscribe(
-            self._on_face_id_changed,
-            events.Events.robot_changed_observed_face_id)
+        self._robot.events.subscribe(self._on_face_id_changed,
+                                     events.Events.robot_changed_observed_face_id)
 
     def __repr__(self):
         return (f"<{self.__class__.__name__} Face id: {self.face_id} "
@@ -113,13 +257,11 @@ class Face(objects.ObservableObject):
 
     def teardown(self):
         """All faces will be torn down by the world when no longer needed."""
-        self._robot.events.unsubscribe(
-            self._on_face_observed,
-            events.Events.robot_observed_face)
+        self._robot.events.unsubscribe(self._on_face_observed,
+                                       events.Events.robot_observed_face)
 
-        self._robot.events.unsubscribe(
-            self._on_face_id_changed,
-            events.Events.robot_changed_observed_face_id)
+        self._robot.events.unsubscribe(self._on_face_id_changed,
+                                       events.Events.robot_changed_observed_face_id)
 
     @property
     def face_id(self) -> int:
@@ -132,12 +274,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Visible face id: {face.face_id}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                # Print the visible face ids
-                for face in robot.world.visible_faces:
-                    print(f"Visible id: {face.face_id}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._face_id if self._updated_face_id is None else self._updated_face_id
 
@@ -153,11 +314,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
-            import anki_vector
+            import time
 
-            with anki_vector.Robot(enable_face_detection=True) as robot:
+            import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
                 for face in robot.world.visible_faces:
                     was_face_originally_unrecognized_but_is_now_recognized = face.has_updated_face_id
+
+            with anki_vector.Robot(enable_face_detection=True) as robot:
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._updated_face_id is not None
 
@@ -167,11 +348,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Updated face id: {face.updated_face_id}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                    print(f"updated_face_id: {face.updated_face_id}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         if self._updated_face_id:
             return self._updated_face_id
@@ -185,11 +386,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
-            import anki_vector
+            import time
 
-            with anki_vector.Robot(enable_face_detection=True) as robot:
+            import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
                 for face in robot.world.visible_faces:
                     print(f"Face name: {face.name}")
+
+            with anki_vector.Robot(enable_face_detection=True) as robot:
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._name
 
@@ -206,11 +427,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Expression: {face.expression}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                  print(f"expression: {face.expression}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._expression
 
@@ -224,11 +465,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Expression score: {face.expression_score}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                    print(f"expression_score: {face.expression_score}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._expression_score
 
@@ -238,11 +499,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Left eye: {face.left_eye}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                    print(f"left_eye: {face.left_eye}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._left_eye
 
@@ -252,11 +533,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Right eye: {face.right_eye}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                    print(f"right_eye: {face.right_eye}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._right_eye
 
@@ -266,11 +567,31 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Nose: {face.nose}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                    print(f"nose: {face.nose}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._nose
 
@@ -280,17 +601,37 @@ class Face(objects.ObservableObject):
 
         .. testcode::
 
+            import time
+
             import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
+                for face in robot.world.visible_faces:
+                    print(f"Mouth: {face.mouth}")
 
             with anki_vector.Robot(enable_face_detection=True) as robot:
-                for face in robot.world.visible_faces:
-                    print(f"mouth: {face.mouth}")
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._mouth
 
     #### Private Event Handlers ####
 
-    def _on_face_observed(self, _, msg):
+    def _on_face_observed(self, _robot, _event_type, msg):
         """Unpacks the face observed stream data from Vector into a Face instance."""
         if self._face_id == msg.face_id:
 
@@ -313,7 +654,7 @@ class Face(objects.ObservableObject):
             self._mouth = msg.mouth
             self._on_observed(pose, image_rect, msg.timestamp)
 
-    def _on_face_id_changed(self, _, msg):
+    def _on_face_id_changed(self, _robot, _event_type, msg):
         """Updates the face id when a tracked face (negative ID) is recognized and
         receives a positive ID or when face records get merged"""
         if self._face_id == msg.old_id:

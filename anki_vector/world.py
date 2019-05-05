@@ -77,11 +77,11 @@ class World(util.Component):
         # Subscribe to callbacks that updates the world view
         self._robot.events.subscribe(self._on_face_observed,
                                      Events.robot_observed_face,
-                                     on_connection_thread=True)
+                                     _on_connection_thread=True)
 
         self._robot.events.subscribe(self._on_object_observed,
                                      Events.robot_observed_object,
-                                     on_connection_thread=True)
+                                     _on_connection_thread=True)
 
     #### Public Properties ####
 
@@ -111,23 +111,43 @@ class World(util.Component):
 
         .. testcode::
 
-            # Print the visible face's attributes
+            import time
+
             import anki_vector
-            with anki_vector.Robot() as robot:
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                print(f"Subscriber called for: {event_type} = {event}")
+
                 for face in robot.world.visible_faces:
-                    print("Face attributes:")
+                    print("--- Face attributes ---")
                     print(f"Face id: {face.face_id}")
                     print(f"Updated face id: {face.updated_face_id}")
                     print(f"Name: {face.name}")
                     print(f"Expression: {face.expression}")
-                    print(f"Timestamp: {face.timestamp}")
+                    print(f"Timestamp: {face.last_observed_time}")
                     print(f"Pose: {face.pose}")
-                    print(f"Image Rect: {face.face_rect}")
+                    print(f"Image Rect: {face.last_observed_image_rect}")
                     print(f"Expression score: {face.expression_score}")
                     print(f"Left eye: {face.left_eye}")
                     print(f"Right eye: {face.right_eye}")
                     print(f"Nose: {face.nose}")
                     print(f"Mouth: {face.mouth}")
+
+            with anki_vector.Robot(enable_face_detection=True) as robot:
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(10)
+                except KeyboardInterrupt:
+                    robot.disconnect()
 
         Returns:
             A generator yielding :class:`anki_vector.faces.Face` instances.
@@ -139,6 +159,8 @@ class World(util.Component):
     @property
     def custom_object_archetypes(self) -> Iterable[objects.CustomObjectArchetype]:
         """generator: yields each custom object archetype that Vector will look for.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         .. testcode::
 
@@ -157,6 +179,8 @@ class World(util.Component):
     def visible_custom_objects(self) -> Iterable[objects.CustomObject]:
         """generator: yields each custom object that Vector can currently see.
 
+        See :class:`objects.CustomObjectMarkers`.
+
         .. testcode::
 
             import anki_vector
@@ -168,6 +192,24 @@ class World(util.Component):
             A generator yielding CustomObject instances
         """
         for obj in self._custom_objects.values():
+            if obj.is_visible:
+                yield obj
+
+    @property
+    def visible_objects(self) -> Iterable[objects.ObservableObject]:
+        """generator: yields each object that Vector can currently see.
+
+        .. testcode::
+
+            import anki_vector
+            with anki_vector.Robot() as robot:
+                for obj in robot.world.visible_objects:
+                    print(obj)
+
+        Returns:
+            A generator yielding Charger, LightCube and CustomObject instances
+        """
+        for obj in self._objects.values():
             if obj.is_visible:
                 yield obj
 
@@ -226,7 +268,7 @@ class World(util.Component):
             # First, place Vector directly in front of his charger so he can observe it.
 
             with anki_vector.Robot() as robot:
-                print('most recently observed charger: {0}.'.format(robot.world.charger))
+                print('Most recently observed charger: {0}'.format(robot.world.charger))
         """
         if self._charger is not None:
             return self._charger
@@ -272,12 +314,30 @@ class World(util.Component):
 
         .. testcode::
 
-            with anki_vector.Robot() as robot:
-                # First get an existing face_id, for instance:
-                previously_observed_face_id = 1
 
-                # Then use the face_id to retrieve the Face instance
-                my_face = robot.world.get_face(previously_observed_face_id)
+            import time
+
+            import anki_vector
+            from anki_vector.events import Events
+            from anki_vector.util import degrees
+
+            def test_subscriber(robot, event_type, event):
+                for face in robot.world.visible_faces:
+                    print(f"Face id: {face.face_id}")
+
+            with anki_vector.Robot(enable_face_detection=True) as robot:
+                # If necessary, move Vector's Head and Lift to make it easy to see his face
+                robot.behavior.set_head_angle(degrees(45.0))
+                robot.behavior.set_lift_height(0.0)
+
+                robot.events.subscribe(test_subscriber, Events.robot_changed_observed_face_id)
+                robot.events.subscribe(test_subscriber, Events.robot_observed_face)
+
+                print("------ show vector your face, press ctrl+c to exit early ------")
+                try:
+                    time.sleep(5)
+                except KeyboardInterrupt:
+                    robot.disconnect()
         """
         return self._faces.get(face_id)
 
@@ -322,6 +382,7 @@ class World(util.Component):
         req = protocol.DisconnectCubeRequest()
         return await self.grpc_interface.DisconnectCube(req)
 
+    # TODO move out of world.py and into lights.py?
     @connection.on_connection_thread()
     async def flash_cube_lights(self) -> protocol.FlashCubeLightsResponse:
         """Flash cube lights
@@ -338,6 +399,7 @@ class World(util.Component):
         req = protocol.FlashCubeLightsRequest()
         return await self.grpc_interface.FlashCubeLights(req)
 
+    # TODO move out of world.py and into objects.py?
     @connection.on_connection_thread(requires_control=False)
     async def forget_preferred_cube(self) -> protocol.ForgetPreferredCubeResponse:
         """Forget preferred cube.
@@ -356,6 +418,7 @@ class World(util.Component):
         req = protocol.ForgetPreferredCubeRequest()
         return await self.grpc_interface.ForgetPreferredCube(req)
 
+    # TODO move out of world.py and into objects.py?
     @connection.on_connection_thread(requires_control=False)
     async def set_preferred_cube(self, factory_id: str) -> protocol.SetPreferredCubeResponse:
         """Set preferred cube.
@@ -378,12 +441,15 @@ class World(util.Component):
         req = protocol.SetPreferredCubeRequest(factory_id=factory_id)
         return await self.grpc_interface.SetPreferredCube(req)
 
+    # TODO better place to put this method than world.py?
     @connection.on_connection_thread(requires_control=False)
     async def delete_custom_objects(self,
                                     delete_custom_marker_objects: bool = True,
                                     delete_fixed_custom_objects: bool = True,
                                     delete_custom_object_archetypes: bool = True):
         """Causes the robot to forget about custom objects it currently knows about.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         .. testcode::
 
@@ -412,6 +478,7 @@ class World(util.Component):
 
         return last_blocking_call
 
+    # TODO better place to put this method than world.py?
     @connection.on_connection_thread(requires_control=False)
     async def define_custom_box(self,
                                 custom_object_type: objects.CustomObjectTypes,
@@ -432,6 +499,8 @@ class World(util.Component):
         The robot will now detect the markers associated with this object and send an
         object_observed message when they are seen. The markers must be placed in the center
         of their respective sides. All 6 markers must be unique.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         :param custom_object_type: the object type you are binding this custom object to.
         :param marker_front: the marker affixed to the front of the object.
@@ -511,6 +580,7 @@ class World(util.Component):
         self.logger.error("Failed to define Custom Object %s", custom_object_archetype)
         return None
 
+    # TODO better place to put this method than world.py?
     @connection.on_connection_thread(requires_control=False)
     async def define_custom_cube(self,
                                  custom_object_type: objects.CustomObjectTypes,
@@ -524,6 +594,8 @@ class World(util.Component):
         The robot will now detect the markers associated with this object and send an
         object_observed message when they are seen. The markers must be placed in the center
         of their respective sides.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         :param custom_object_type: the object type you are binding this custom object to.
         :param marker: the marker affixed to every side of the cube.
@@ -578,6 +650,7 @@ class World(util.Component):
         self.logger.error("Failed to define Custom Object %s", custom_object_archetype)
         return None
 
+    # TODO better place to put this method than world.py?
     @connection.on_connection_thread(requires_control=False)
     async def define_custom_wall(self,
                                  custom_object_type: objects.CustomObjectTypes,
@@ -592,6 +665,8 @@ class World(util.Component):
         The robot will now detect the markers associated with this object and send an
         object_observed message when they are seen. The markers must be placed in the center
         of their respective sides.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         :param custom_object_type: the object type you are binding this custom object to.
         :param marker: the marker affixed to the front and back of the wall.
@@ -652,6 +727,7 @@ class World(util.Component):
         self.logger.error("Failed to define Custom Object %s", custom_object_archetype)
         return None
 
+    # TODO better place to put this method than world.py?
     def create_custom_fixed_object(self,
                                    pose: util.Pose,
                                    x_size_mm: float,
@@ -660,6 +736,8 @@ class World(util.Component):
                                    relative_to_robot: bool = False,
                                    use_robot_origin: bool = True) -> objects.FixedCustomObject:
         """Defines a cuboid of custom size and places it in the world. It cannot be observed.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         :param pose: The pose of the object we are creating.
         :param x_size_mm: size of the object (in millimeters) in the x axis.
@@ -780,9 +858,9 @@ class World(util.Component):
 
     #### Private Event Handlers ####
 
-    def _on_face_observed(self, _, msg):
+    def _on_face_observed(self, _robot, _event_type, msg):
         """Adds a newly observed face to the world view."""
-        if msg.face_id not in self._faces or msg.face_id not in self._objects:
+        if msg.face_id not in self._faces:
             pose = util.Pose(x=msg.pose.x, y=msg.pose.y, z=msg.pose.z,
                              q0=msg.pose.q0, q1=msg.pose.q1,
                              q2=msg.pose.q2, q3=msg.pose.q3,
@@ -796,22 +874,24 @@ class World(util.Component):
                                      msg.left_eye, msg.right_eye, msg.nose, msg.mouth, msg.timestamp)
             if face:
                 self._faces[face.face_id] = face
-                self._objects[face.face_id] = face
 
-    def _on_object_observed(self, _, msg):
+    def _on_object_observed(self, _robot, _event_type, msg):
         """Adds a newly observed custom object to the world view."""
-        if msg.object_family == protocol.ObjectFamily.Value("LIGHT_CUBE"):
+        first_custom_type = protocol.ObjectType.Value("FIRST_CUSTOM_OBJECT_TYPE")
+        if msg.object_type == objects.LIGHT_CUBE_1_TYPE:
             if msg.object_id not in self._objects:
-                if self.light_cube:
-                    self._objects[msg.object_id] = self.light_cube
+                light_cube = self._light_cube.get(objects.LIGHT_CUBE_1_TYPE)
+                if light_cube:
+                    light_cube.object_id = msg.object_id
+                    self._objects[msg.object_id] = light_cube
 
-        if msg.object_family == protocol.ObjectFamily.Value("CHARGER"):
+        elif msg.object_type == protocol.ObjectType.Value("CHARGER_BASIC"):
             if msg.object_id not in self._objects:
                 charger = self._allocate_charger(msg)
                 if charger:
                     self._objects[msg.object_id] = charger
 
-        if msg.object_family == protocol.ObjectFamily.Value("CUSTOM_OBJECT"):
+        elif first_custom_type <= msg.object_type < (first_custom_type + protocol.CustomType.Value("CUSTOM_TYPE_COUNT")):
             if msg.object_id not in self._objects:
                 custom_object = self._allocate_custom_marker_object(msg)
                 if custom_object:

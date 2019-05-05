@@ -42,22 +42,23 @@ __all__ = ['Angle',
            'speed_mmps']
 
 import argparse
+import configparser
 from functools import wraps
 import logging
 import math
 import os
+from pathlib import Path
 import sys
 import time
-from typing import Callable
+from typing import Callable, Union
 
+from .exceptions import VectorConfigurationException, VectorPropertyValueNotReadyException
 from .messaging import protocol
 
 try:
     from PIL import Image, ImageDraw
 except ImportError:
     sys.exit("Cannot import from PIL: Do `pip3 install --user Pillow` to install")
-
-# TODO Move to the robot class
 
 
 def parse_command_args(parser: argparse.ArgumentParser = None):
@@ -93,6 +94,9 @@ def block_while_none(interval: float = 0.1, max_iterations: int = 50):
 
     :param interval: how often to check if the property is no longer None
     :param max_iterations: how many times to check the property before raising an error
+
+    This will raise a :class:`VectorControlTimeoutException` if the property cannot be retrieved
+    before :attr:`max_iterations`.
     """
     def blocker(func: Callable):
         @wraps(func)
@@ -103,7 +107,7 @@ def block_while_none(interval: float = 0.1, max_iterations: int = 50):
                 time.sleep(interval)
                 iterations += 1
                 if iterations > max_iterations:
-                    raise Exception("Value not ready")
+                    raise VectorPropertyValueNotReadyException()
                 result = func(*args, **kwargs)
             return result
         return wrapped
@@ -127,8 +131,18 @@ def setup_basic_logging(custom_handler: logging.Handler = None,
     handler = custom_handler
     if handler is None:
         handler = logging.StreamHandler(stream=target)
-        formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+        formatter = logging.Formatter("%(asctime)s.%(msecs)03d %(name)+25s %(levelname)+7s  %(message)s",
+                                      "%H:%M:%S")
         handler.setFormatter(formatter)
+
+        class LogCleanup(logging.Filter):  # pylint: disable=too-few-public-methods
+            def filter(self, record):
+                # Drop 'anki_vector' from log messages
+                record.name = '.'.join(record.name.split('.')[1:])
+                # Indent past informational chunk
+                record.msg = record.msg.replace("\n", f"\n{'':48}")
+                return True
+        handler.addFilter(LogCleanup())
 
     vector_logger = logging.getLogger('anki_vector')
     if not vector_logger.handlers:
@@ -782,8 +796,8 @@ class Pose:
         Returns:
             True if the two poses are comparable, False otherwise.
         """
-        return (self.is_valid and other_pose.is_valid and
-                (self.origin_id == other_pose.origin_id))
+        return (self.is_valid and other_pose.is_valid
+                and (self.origin_id == other_pose.origin_id))
 
     def to_matrix(self) -> Matrix44:
         """Convert the Pose to a Matrix44.
@@ -808,7 +822,13 @@ class Pose:
 
 
 class ImageRect:
-    """Image coordinates and size"""
+    '''Defines a bounding box within an image frame.
+
+    This is used when objects and faces are observed to denote where in
+    the robot's camera view the object or face actually appears.  It's then
+    used by the annotate module to show an outline of a box around
+    the object or face.
+    '''
 
     __slots__ = ('_x_top_left', '_y_top_left', '_width', '_height')
 
@@ -837,6 +857,15 @@ class ImageRect:
     def height(self) -> float:
         """The height of the object from when it was last visible within Vector's camera view."""
         return self._height
+
+    def scale_by(self, scale_multiplier: Union[int, float]) -> None:
+        """Scales the image rectangle by the multiplier provided."""
+        if not isinstance(scale_multiplier, (int, float)):
+            raise TypeError("Unsupported operand for * expected number")
+        self._x_top_left *= scale_multiplier
+        self._y_top_left *= scale_multiplier
+        self._width *= scale_multiplier
+        self._height *= scale_multiplier
 
 
 class Distance:
@@ -912,6 +941,8 @@ class Speed:
     """Represents a speed.
 
     This class allows speeds to be measured in millimeters per second.
+
+    The maximum speed is 220 mm/s and is clamped internally.
 
     Use :func:`speed_mmps` convenience methods to generate
     a Speed instance.
@@ -1015,8 +1046,8 @@ class RectangleOverlay(BaseOverlay):
         image_width, image_height = image.size
         remaining_width = image_width - self.width
         remaining_height = image_height - self.height
-        x1, y1 = remaining_height // 2, remaining_width // 2
-        x2, y2 = (image_height - (remaining_height // 2)), (image_width - (remaining_width // 2))
+        x1, y1 = remaining_width // 2, remaining_height // 2
+        x2, y2 = (image_width - (remaining_width // 2)), (image_height - (remaining_height // 2))
 
         for i in range(0, self.line_thickness):
             d.rectangle([x1 + i, y1 + i, x2 - i, y2 - i], outline=self.line_color)
@@ -1046,3 +1077,56 @@ class Component:
         """A direct reference to the connected aiogrpc interface.
         """
         return self._robot.conn.grpc_interface
+
+
+def read_configuration(serial: str, name: str, logger: logging.Logger) -> dict:
+    """Open the default conf file, and read it into a :class:`configparser.ConfigParser`
+    If :code:`serial is not None`, this method will try to find a configuration with serial
+    number :code:`serial`, and raise an exception otherwise. If :code:`serial is None` and
+    :code:`name is not None`, this method will try to find a configuration which matches
+    the provided name, and raise an exception otherwise. If both :code:`serial is None` and
+    :code:`name is None`, this method will return a configuration if exactly `1` exists, but
+    if multiple configurations exists, it will raise an exception.
+
+    :param serial: Vector's serial number
+    :param name: Vector's name
+    """
+    home = Path.home() / ".anki_vector"
+    conf_file = str(home / "sdk_config.ini")
+    parser = configparser.ConfigParser(strict=False)
+    parser.read(conf_file)
+
+    sections = parser.sections()
+    if not sections:
+        raise VectorConfigurationException('Could not find the sdk configuration file. Please run `python3 -m anki_vector.configure` to set up your Vector for SDK usage.')
+    elif (serial is None) and (name is None):
+        if len(sections) == 1:
+            serial = sections[0]
+            logger.warning("No serial number or name provided. Automatically selecting {}".format(serial))
+        else:
+            raise VectorConfigurationException("Found multiple robot serial numbers. "
+                                               "Please provide the serial number or name of the Robot you want to control.\n\n"
+                                               "Example: ./01_hello_world.py --serial {{robot_serial_number}}")
+
+    config = {k.lower(): v for k, v in parser.items()}
+
+    if serial is not None:
+        serial = serial.lower()
+        try:
+            return config[serial]
+        except KeyError:
+            raise VectorConfigurationException("Could not find matching robot info for given serial number: {}. "
+                                               "Please check your serial number is correct.\n\n"
+                                               "Example: ./01_hello_world.py --serial {{robot_serial_number}}", serial)
+    else:
+        for keySerial in config:
+            for key in config[keySerial]:
+                if config[keySerial][key] == name:
+                    return config[keySerial]
+                if config[keySerial][key].lower() == name.lower():
+                    logger.warning("Using case-insensitive name match found in config. Set 'name' field to match 'Vector-A1B2' format.")
+                    return config[keySerial]
+
+        raise VectorConfigurationException("Could not find matching robot info for given name: {}. "
+                                           "Please check your name is correct.\n\n"
+                                           "Example: ./01_hello_world.py --name {{robot_name}}", name)

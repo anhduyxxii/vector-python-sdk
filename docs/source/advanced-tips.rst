@@ -11,8 +11,32 @@ Moving Vector between WiFi networks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When you move Vector from one WiFi network to another (using the Vector App),
-or if your Vector's IP changes,  you will also need to make some changes to
-your SDK setup. To assist in this migration, the ``anki_vector.configure``
+or if your Vector's IP changes, the SDK will need to determine Vector's new IP address.
+There are two ways to accomplish this. 
+
+****************************
+1. Automatic: mDNS Discovery
+****************************
+
+The SDK will automatically discover your Vector, even on a new WiFi network, 
+when you connect as follows::
+
+    import anki_vector
+
+    with anki_vector.Robot(name="Vector-A1B2") as robot:
+        # The sdk will try to connect to 'Vector A1B2', 
+        # even if its IP address has changed. 
+        pass
+
+You will need to install the ``zeroconf`` package to use this feature::
+
+    pip3 install --user zeroconf
+
+*******************************
+2. Manual: Update Configuration
+*******************************
+
+Alternatively, you can manually make changes to your SDK setup. To assist in this migration, the ``anki_vector.configure``
 executable submodule provides a ``-u`` parameter to quickly reconnect to Vector.
 
 To update your connection, you will need to find the IP address on
@@ -31,8 +55,8 @@ which robot you want to use by passing its serial number as a parameter
 to the Robot constructor::
 
 
-  with anki_vector.Robot("00e20142") as robot:        
-    robot.anim.play_animation('anim_pounce_success_02')
+  with anki_vector.Robot("00e20142") as robot:
+    robot.anim.play_animation_trigger("GreetAfterLongTime")
 
 
 Alternatively, you can pass a ``--serial`` flag on the command
@@ -64,6 +88,19 @@ up those settings::
 
     export ANKI_ROBOT_HOST="192.168.42.42"
     export VECTOR_ROBOT_NAME=Vector-A1B2
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Keeping Vector Still Between SDK Scripts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Vector can be controlled so that (like Cozmo) he will not move between SDK scripts.  There are three options for entering this mode of operation:
+
+* Control can be reserved from the command prompt: ``python3 -m anki_vector.reserve_control``  Vector will remain still between SDK scripts until the script/process is exited.
+* There are OS-specific scripts (Mac/Win) in the ``examples/scripts/`` folder that can be double-clicked to more easily reserve behavior control.  The script will open in a new window; closing the window or otherwise stopping the script will release control back to the built-in robot behaviors.
+* A single Python file can explicitly reserve control using the ``ReserveBehaviorControl`` object.  Consult the ``anki_vector.connection`` `documentation <https://developer.anki.com/vector/docs/generated/anki_vector.connection.html>`_ for more information.
+
+While normal robot behaviors are suppressed, Vector may look 'broken'.  Closing the SDK scripts, disconnecting from the
+robot, or restarting the robot will all release behavior control.
 
 
 
