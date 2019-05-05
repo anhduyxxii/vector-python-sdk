@@ -17,6 +17,9 @@
 Vector builds a memory map of the navigable world around him as he drives
 around. This is mostly based on where objects are seen (the cubes, charger, and
 any custom objects), and also includes where Vector detects cliffs/drops, and
+visible edges (e.g. sudden changes in color).
+
+This differs from a standard occupancy map in that it doesn't deal with
 probabilities of occupancy, but instead encodes what type of content is there.
 
 To use the map you must first call :meth:`anki_vector.nav_map.NavMapComponent.init_nav_map_feed`
@@ -36,6 +39,7 @@ from typing import List
 
 from . import util
 from .events import Events
+from .exceptions import VectorException
 from .messaging import protocol
 
 
@@ -344,7 +348,7 @@ class NavMapComponent(util.Component):
                 # Make sure Vector drives around so the nav map will update
                 robot.behavior.drive_off_charger()
                 robot.motors.set_wheel_motors(-100, 100)
-            latest_nav_map = robot.nav_map.latest_nav_map
+                latest_nav_map = robot.nav_map.latest_nav_map
 
     :param robot: A reference to the owner Robot object.
     """
@@ -371,7 +375,7 @@ class NavMapComponent(util.Component):
                 latest_nav_map = robot.nav_map.latest_nav_map
         """
         if not self._nav_map_feed_task or self._nav_map_feed_task.done():
-            raise Exception("Nav map not initialized")
+            raise VectorException("Nav map not initialized. Check that Robot parameter enable_nav_map_feed is set to True.")
         return self._latest_nav_map
 
     def init_nav_map_feed(self, frequency: float = 0.5) -> None:

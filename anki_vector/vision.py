@@ -56,10 +56,10 @@ class VisionComponent(util.Component):  # pylint: disable=too-few-public-methods
         if isinstance(vision_mode, futures.Future):
             vision_mode.result()
 
-    def _handle_mirror_mode_disabled_event(self, _, _msg):
+    def _handle_mirror_mode_disabled_event(self, _robot, _event_type, _msg):
         self._display_camera_feed_on_face = False
 
-    def _handle_vision_modes_auto_disabled_event(self, _, _msg):
+    def _handle_vision_modes_auto_disabled_event(self, _robot, _event_type, _msg):
         self._detect_faces = False
         self._detect_custom_objects = False
         # self._detect_motion = False
@@ -95,7 +95,12 @@ class VisionComponent(util.Component):  # pylint: disable=too-few-public-methods
 
     @connection.on_connection_thread()
     async def enable_custom_object_detection(self, detect_custom_objects: bool = True):
-        """Enable custom object detection on the robot's camera
+        """Enable custom object detection on the robot's camera.
+
+        If custom object detection is being turned off, the robot may still choose to keep it on
+        if another subscriber (including one internal to the robot) requests this vision mode be active.
+
+        See :class:`objects.CustomObjectMarkers`.
 
         :param detect_custom_objects: Specify whether we want the robot to detect custom objects.
 
@@ -141,11 +146,11 @@ class VisionComponent(util.Component):  # pylint: disable=too-few-public-methods
     # @connection.on_connection_thread()
     # async def enable_motion_detection(self, detect_motion: bool = True):
     #     """Enable motion detection on the robot's camera
-
+    #
     #     :param detect_motion: Specify whether we want the robot to detect motion.
-
+    #
     #     .. testcode::
-
+    #
     #         import anki_vector
     #         with anki_vector.Robot() as robot:
     #             robot.vision.enable_motion_detection(detect_motion=True)
@@ -160,6 +165,16 @@ class VisionComponent(util.Component):  # pylint: disable=too-few-public-methods
         """Display the robot's camera feed on its face along with any detections (if enabled)
 
         :param display_camera_feed_on_face: Specify whether we want to display the robot's camera feed on its face.
+
+        .. testcode::
+
+            import anki_vector
+
+            import time
+
+            with anki_vector.Robot() as robot:
+                robot.vision.enable_display_camera_feed_on_face()
+                time.sleep(10.0)
         """
         self._display_camera_feed_on_face = display_camera_feed_on_face
 

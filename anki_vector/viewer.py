@@ -19,19 +19,8 @@
 __all__ = ['ViewerComponent', 'Viewer3DComponent']
 
 import multiprocessing as mp
-import os
 import sys
 import threading
-
-try:
-    import cv2
-except ImportError as exc:
-    sys.exit("Cannot import opencv-python: Do `pip3 install opencv-python` to install")
-
-try:
-    import numpy as np
-except ImportError as exc:
-    sys.exit("Cannot import numpy: Do `pip3 install numpy` to install")
 
 try:
     from PIL import Image
@@ -44,10 +33,10 @@ from .events import Events
 
 class ViewerComponent(util.Component):
     """This component opens a window and renders the images obtained from Vector's camera.
-    This viewer window is run in a separate process spawned by :func:`~ViewerComponent.show_video`.
+    This viewer window is run in a separate process spawned by :func:`~ViewerComponent.show`.
     Being on a separate process means the rendering of the camera does not block the main thread
     of the calling code, and allows the viewer to have its own ui thread which it can operate on.
-    :func:`~ViewerComponent.stop_video` will stop the viewer process.
+    :func:`~ViewerComponent.close` will stop the viewer process.
 
     .. testcode::
 
@@ -55,7 +44,7 @@ class ViewerComponent(util.Component):
 
         import time
 
-        with anki_vector.Robot(enable_camera_feed=True, show_viewer=True) as robot:
+        with anki_vector.Robot(show_viewer=True) as robot:
             time.sleep(5)
 
     :param robot: A reference to the owner Robot object. (May be :class:`None`)
@@ -68,37 +57,40 @@ class ViewerComponent(util.Component):
         self._frame_queue: mp.Queue = None
         self._process = None
 
-    def show_video(self, timeout: float = 10.0) -> None:
+    def show(self, timeout: float = 10.0, force_on_top: bool = True) -> None:
         """Render a video stream using the images obtained from
         Vector's camera feed.
-
-        Be sure to create your Robot object with the camera feed enabled
-        by using "show_viewer=True" and "enable_camera_feed=True".
 
         .. testcode::
 
             import anki_vector
             import time
 
-            with anki_vector.Robot(enable_camera_feed=True) as robot:
-                robot.viewer.show_video()
+            with anki_vector.Robot() as robot:
+                robot.viewer.show()
                 time.sleep(10)
 
-        :param timeout: Render video for the given time. (Renders forever, if timeout not given)
+        :param timeout: Render video for the given time. (Renders forever, if timeout not given.)
+        :param force_on_top: Specifies whether the window should be forced on top of all others.
         """
+        from . import camera_viewer
+
+        self.robot.camera.init_camera_feed()
+
         ctx = mp.get_context('spawn')
         self._close_event = ctx.Event()
         self._frame_queue = ctx.Queue(maxsize=4)
-        self._process = ctx.Process(target=ViewerComponent._render_frames,
+        self._process = ctx.Process(target=camera_viewer.main,
                                     args=(self._frame_queue,
                                           self._close_event,
                                           self.overlays,
-                                          timeout),
+                                          timeout,
+                                          force_on_top),
                                     daemon=True,
                                     name="Camera Viewer Process")
         self._process.start()
 
-    def stop_video(self) -> None:
+    def close(self) -> None:
         """Stop rendering video of Vector's camera feed and close the viewer process.
 
         .. testcode::
@@ -108,7 +100,7 @@ class ViewerComponent(util.Component):
 
             with anki_vector.Robot(show_viewer=True) as robot:
                 time.sleep(10)
-                robot.viewer.stop_video()
+                robot.viewer.close()
         """
         if self._close_event:
             self._close_event.set()
@@ -132,7 +124,8 @@ class ViewerComponent(util.Component):
         .. note::
 
             This function will be called automatically from the camera feed when the
-            :class:`~anki_vector.robot.Robot` object is created with ``enable_camera_feed=True``.
+            :class:`~anki_vector.robot.Robot` or :class:`~anki_vector.robot.AsyncRobot`
+            object is created with ``show_viewer=True``.
 
         .. code-block:: python
 
@@ -157,41 +150,6 @@ class ViewerComponent(util.Component):
         for overlay in self.overlays:
             overlay.apply_overlay(image)
         return image
-
-    @staticmethod
-    def _render_frames(queue: mp.Queue, event: mp.Event, overlays: list = None, timeout: float = 10.0) -> None:
-        """Rendering the frames in another process. This allows the UI to have the
-        main thread of its process while the user code continues to execute.
-
-        :param queue: A queue to send frames between main thread and other process.
-        :param overlays: overlays to be drawn on the images of the renderer.
-        :param timeout: The time without a new frame before the process will exit.
-        """
-        is_windows = os.name == 'nt'
-        window_name = "Vector Camera Feed"
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-        try:
-            image = queue.get(True, timeout=timeout)
-            while image:
-                if event.is_set():
-                    break
-                if overlays:
-                    for overlay in overlays:
-                        overlay.apply_overlay(image)
-                image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-                cv2.imshow(window_name, image)
-                cv2.waitKey(1)
-                if not is_windows and cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE) < 1:
-                    break
-                image = queue.get(True, timeout=timeout)
-        except TimeoutError:
-            pass
-        except KeyboardInterrupt:
-            pass
-        finally:
-            event.set()
-            cv2.destroyWindow(window_name)
-            cv2.waitKey(1)
 
 
 class _ExternalRenderCallFunctor():  # pylint: disable=too-few-public-methods
@@ -243,8 +201,9 @@ class Viewer3DComponent(util.Component):
         self._process: mp.process.BaseProcess = None
         self._update_thread: threading.Thread = None
         self._last_robot_control_intents = None
+        self.connecting_to_cube = False
 
-    def show(self):
+    def show(self, show_viewer_controls: bool = True):
         """Spawns a background process that shows the navigation map in a 3D view.
 
         .. testcode::
@@ -257,6 +216,8 @@ class Viewer3DComponent(util.Component):
                 robot.viewer_3d.show()
                 time.sleep(5)
                 robot.viewer_3d.close()
+
+        :param show_viewer_controls: Specifies whether to draw controls on the view.
         """
         from . import opengl
         ctx = mp.get_context('spawn')
@@ -277,7 +238,8 @@ class Viewer3DComponent(util.Component):
                                           self._nav_map_queue,
                                           self._world_frame_queue,
                                           self._extra_render_function_queue,
-                                          self._user_data_queue),
+                                          self._user_data_queue,
+                                          show_viewer_controls),
                                     daemon=True,
                                     name="3D Viewer Process")
         self._process.start()
@@ -350,6 +312,16 @@ class Viewer3DComponent(util.Component):
                 self._process.terminate()
             self._process = None
 
+    def connect_to_cube(self):
+        '''Connect to light cube'''
+        if self.connecting_to_cube:
+            return
+
+        self.connecting_to_cube = True
+        self.robot.world.connect_cube()
+        self.connecting_to_cube = False
+        return
+
     def _update(self):
         """Reads most recently stored user-triggered intents, and sends
         motor messages to the robot if the intents should effect the robot's
@@ -384,11 +356,15 @@ class Viewer3DComponent(util.Component):
 
                 if not old_intents or old_intents.head_speed != input_intents.head_speed:
                     self.robot.motors.set_head_motor(input_intents.head_speed, _return_future=True)
+
+                if input_intents.connect_to_light_block and (old_intents is None or not old_intents.connect_to_light_block):
+                    threading.Thread(target=self.connect_to_cube).start()
+
             except mp.queues.Empty:
                 pass
             close_event = self._close_event
 
-    def _on_robot_state_update(self, *_):
+    def _on_robot_state_update(self, robot, *_):
         """Called from SDK process whenever the robot state is updated (so i.e. every engine tick).
 
         Note:
@@ -400,16 +376,15 @@ class Viewer3DComponent(util.Component):
             (main) process via a multiprocessing queue.
         """
         from .opengl import opengl_vector
-        world_frame = opengl_vector.WorldRenderFrame(self.robot)
+        world_frame = opengl_vector.WorldRenderFrame(robot, self.connecting_to_cube)
         queue = self._world_frame_queue
         if queue:
             try:
                 queue.put(world_frame, False)
             except mp.queues.Full:
                 pass
-        # self._view_controller.update(self.robot) # TODO: <- sounds like this has something to do with keyboard input...
 
-    def _on_nav_map_update(self, _, msg):
+    def _on_nav_map_update(self, _robot, _event_type, msg):
         """Called from SDK process whenever the nav map is updated.
 
         Note:

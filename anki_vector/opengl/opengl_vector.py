@@ -74,7 +74,7 @@ LIFT_ARM_LENGTH_MM = 66.0
 LIFT_PIVOT_HEIGHT_MM = 45.0
 
 #: Angle of the lift in the object's initial default pose.
-LIFT_ANGLE_IN_DEFAULT_POSE = -11.36
+LIFT_ANGLE_IN_DEFAULT_POSE = -0.1136
 
 #: Pivot offset for where the fork rotates around itself
 FORK_PIVOT_X = 3.0
@@ -321,6 +321,7 @@ class RobotView(opengl.PrecomputedView):
         angle_radians = math.asin(sin_angle)
 
         lift_angle = -(angle_radians - LIFT_ANGLE_IN_DEFAULT_POSE)
+        lift_angle_degrees = math.degrees(lift_angle)
 
         glPushMatrix()
         glEnable(GL_LIGHTING)
@@ -334,7 +335,7 @@ class RobotView(opengl.PrecomputedView):
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         self._display_vector_body()
-        self._display_vector_lift(lift_angle)
+        self._display_vector_lift(lift_angle_degrees)
         self._display_vector_head(head_angle_degrees)
 
         glDisable(GL_LIGHTING)
@@ -550,9 +551,15 @@ class CustomObjectRenderFrame(ObservableObjectRenderFrame):  # pylint: disable=t
             super().__init__(custom_object)
 
         self.is_fixed = is_fixed
-        self.x_size_mm = custom_object.archetype.x_size_mm
-        self.y_size_mm = custom_object.archetype.y_size_mm
-        self.z_size_mm = custom_object.archetype.z_size_mm
+
+        if self.is_fixed:
+            self.x_size_mm = custom_object.x_size_mm
+            self.y_size_mm = custom_object.y_size_mm
+            self.z_size_mm = custom_object.z_size_mm
+        else:
+            self.x_size_mm = custom_object.archetype.x_size_mm
+            self.y_size_mm = custom_object.archetype.y_size_mm
+            self.z_size_mm = custom_object.archetype.z_size_mm
 
 
 class RobotRenderFrame():  # pylint: disable=too-few-public-methods
@@ -580,8 +587,10 @@ class WorldRenderFrame():  # pylint: disable=too-few-public-methods
         defined in it's world class.
     """
 
-    def __init__(self, robot):
+    def __init__(self, robot, connecting_to_cube):
 
+        self.connected_cube = robot.world.connected_light_cube is not None
+        self.connecting_to_cube = connecting_to_cube
         self.robot_frame = RobotRenderFrame(robot)
 
         self.cube_frames: List[CubeRenderFrame] = []
@@ -601,3 +610,11 @@ class WorldRenderFrame():  # pylint: disable=too-few-public-methods
             is_fixed = isinstance(obj, FixedCustomObject)
             if is_custom or is_fixed:
                 self.custom_object_frames.append(CustomObjectRenderFrame(obj, is_fixed))
+
+    def cube_connected(self):
+        '''Is there a light cube connected to Vector'''
+        return self.connected_cube
+
+    def cube_connecting(self):
+        '''Is there a current attempt to connect to a light cube'''
+        return self.connecting_to_cube

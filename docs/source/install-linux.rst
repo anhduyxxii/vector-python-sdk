@@ -42,6 +42,10 @@ Python Installation
 
     sudo apt install python3-pip
 
+3. Last, install Tkinter::
+
+    sudo apt-get install python3-pil.imagetk
+
 """"""""""""""""
 SDK Installation
 """"""""""""""""
@@ -50,11 +54,19 @@ To install the SDK, type the following into the Terminal window::
 
     python3 -m pip install --user anki_vector
 
+"""""""""""
+SDK Upgrade
+"""""""""""
+
+To upgrade the SDK from a previous install, enter this command::
+
+    python3 -m pip install --user --upgrade anki_vector
+
 ^^^^^^^^^^^^^^^^^^^^^
 Vector Authentication
 ^^^^^^^^^^^^^^^^^^^^^
 
-To authenticate with the robot, type the following into the Terminal window::
+To authenticate with the robot, type the following into the Terminal window. Note that during this configure step, your password will not show by design as a security precaution::
 
     python3 -m anki_vector.configure
 
@@ -90,7 +102,7 @@ Python and Module Installation
 
 3. Install the following additional packages::
 
-    sudo apt-get install build-essential libssl-dev libffi-dev python3.6-dev
+    sudo apt-get install build-essential libssl-dev libffi-dev python3.6-dev python3-pil.imagetk
 
 
 """"""""""""""""
@@ -101,11 +113,19 @@ To install the SDK, type the following into the Terminal window::
 
     python3.6 -m pip install --user anki_vector
 
+"""""""""""
+SDK Upgrade
+"""""""""""
+
+To upgrade the SDK from a previous install, enter this command::
+
+    python3.6 -m pip install --user --upgrade anki_vector
+    
 ^^^^^^^^^^^^^^^^^^^^^
 Vector Authentication
 ^^^^^^^^^^^^^^^^^^^^^
 
-To authenticate with the robot, type the following into the Terminal window::
+To authenticate with the robot, type the following into the Terminal window. Note that during this configure step, your password will not show by design as a security precaution::
 
     python3.6 -m anki_vector.configure
 

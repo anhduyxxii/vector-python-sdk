@@ -33,7 +33,7 @@ to recognize the object and its position and rotation ("pose").  You can attach
 markers to your own objects for Vector to recognize by printing them out from the
 online documentation.  They will be detected as :class:`CustomObject` instances.
 
-Vector connects to his Light Cubes with BLE.
+Vector connects to his Light Cube with BLE.
 """
 
 # __all__ should order by constants, event classes, other classes, functions.
@@ -43,7 +43,7 @@ __all__ = ['LIGHT_CUBE_1_TYPE', 'OBJECT_VISIBILITY_TIMEOUT',
            'FixedCustomObject', 'LightCube', 'ObservableObject']
 
 # TODO Curious why events like the following aren't listed? At least some do seem to be supported in other parts of anki_vector.
-# EvtObjectTapped, EvtObjectConnectChanged, EvtObjectConnected, EvtObjectLocated, EvtObjectMoving, EvtObjectMovingStarted
+# EvtObjectTapped, EvtObjectConnectChanged, EvtObjectConnected, EvtObjectLocated, EvtObjectMoving, EvtObjectMovingStarted, EvtObjectMovingStopped
 
 
 import collections
@@ -69,6 +69,33 @@ class EvtObjectObserved():  # pylint: disable=too-few-public-methods
     See EvtObjectAppeared if you only want to know when an object first
     becomes visible.
 
+    .. testcode::
+
+        import time
+
+        import anki_vector
+        from anki_vector.events import Events
+        from anki_vector.util import degrees
+
+        def handle_object_observed(robot, event_type, event):
+            # This will be called whenever an EvtObjectObserved is dispatched -
+            # whenever an Object comes into view.
+            print(f"--------- Vector observed an object --------- \\n{event.obj}")
+
+        with anki_vector.Robot(default_logging=False,
+                               show_viewer=True,
+                               show_3d_viewer=True,
+                               enable_nav_map_feed=True) as robot:
+            # Place Vector's cube where he can see it
+
+            robot.events.subscribe(handle_object_observed, Events.object_observed)
+
+            # If necessary, move Vector's Head and Lift down
+            robot.behavior.set_lift_height(0.0)
+            robot.behavior.set_head_angle(degrees(0.0))
+
+            time.sleep(3.0)
+
     :param obj: The object that was observed
     :param image_rect: An :class:`anki_vector.util.ImageRect`: defining where the object is within Vector's camera view
     :param pose: The :class:`anki_vector.util.Pose`: defining the position and rotation of the object
@@ -92,6 +119,33 @@ class EvtObjectAppeared():  # pylint: disable=too-few-public-methods
     For continuous tracking information about a visible object, see
     EvtObjectObserved.
 
+    .. testcode::
+
+        import time
+
+        import anki_vector
+        from anki_vector.events import Events
+        from anki_vector.util import degrees
+
+        def handle_object_appeared(robot, event_type, event):
+            # This will be called whenever an EvtObjectAppeared is dispatched -
+            # whenever an Object comes into view.
+            print(f"--------- Vector started seeing an object --------- \\n{event.obj}")
+
+        with anki_vector.Robot(default_logging=False,
+                               show_viewer=True,
+                               show_3d_viewer=True,
+                               enable_nav_map_feed=True) as robot:
+            # Place Vector's cube where he can see it
+
+            robot.events.subscribe(handle_object_appeared, Events.object_appeared)
+
+            # If necessary, move Vector's Head and Lift down
+            robot.behavior.set_lift_height(0.0)
+            robot.behavior.set_head_angle(degrees(0.0))
+
+            time.sleep(3.0)
+
     :param obj: The object that is starting to be observed
     :param image_rect: An :class:`anki_vector.util.ImageRect`: defining where the object is within Vector's camera view
     :param pose: The :class:`anki_vector.util.Pose`: defining the position and rotation of the object
@@ -105,6 +159,33 @@ class EvtObjectAppeared():  # pylint: disable=too-few-public-methods
 
 class EvtObjectDisappeared():  # pylint: disable=too-few-public-methods
     """Triggered whenever an object that was previously being observed is no longer visible.
+
+    .. testcode::
+
+        import time
+
+        import anki_vector
+        from anki_vector.events import Events
+        from anki_vector.util import degrees
+
+        def handle_object_disappeared(robot, event_type, event):
+            # This will be called whenever an EvtObjectDisappeared is dispatched -
+            # whenever an Object goes out of view.
+            print(f"--------- Vector stopped seeing an object --------- \\n{event.obj}")
+
+        with anki_vector.Robot(default_logging=False,
+                               show_viewer=True,
+                               show_3d_viewer=True,
+                               enable_nav_map_feed=True) as robot:
+            # Place Vector's cube where he can see it
+
+            robot.events.subscribe(handle_object_disappeared, Events.object_disappeared)
+
+            # If necessary, move Vector's Head and Lift down
+            robot.behavior.set_lift_height(0.0)
+            robot.behavior.set_head_angle(degrees(0.0))
+
+            time.sleep(3.0)
 
     :param obj: The object that is no longer being observed
     """
@@ -354,65 +435,51 @@ class LightCube(ObservableObject):
         self._factory_id: str = None
 
         #: Subscribe to relevant events
-        self.robot.events.subscribe(
-            self._on_object_connection_state_changed,
-            Events.object_connection_state)
+        self.robot.events.subscribe(self._on_object_connection_state_changed,
+                                    Events.object_connection_state)
 
-        self.robot.events.subscribe(
-            self._on_object_moved,
-            Events.object_moved)
+        self.robot.events.subscribe(self._on_object_moved,
+                                    Events.object_moved)
 
-        self.robot.events.subscribe(
-            self._on_object_stopped_moving,
-            Events.object_stopped_moving)
+        self.robot.events.subscribe(self._on_object_stopped_moving,
+                                    Events.object_stopped_moving)
 
-        self.robot.events.subscribe(
-            self._on_object_up_axis_changed,
-            Events.object_up_axis_changed)
+        self.robot.events.subscribe(self._on_object_up_axis_changed,
+                                    Events.object_up_axis_changed)
 
-        self.robot.events.subscribe(
-            self._on_object_tapped,
-            Events.object_tapped)
+        self.robot.events.subscribe(self._on_object_tapped,
+                                    Events.object_tapped)
 
-        self.robot.events.subscribe(
-            self._on_object_observed,
-            Events.robot_observed_object)
+        self.robot.events.subscribe(self._on_object_observed,
+                                    Events.robot_observed_object)
 
-        self.robot.events.subscribe(
-            self._on_object_connection_lost,
-            Events.cube_connection_lost)
+        self.robot.events.subscribe(self._on_object_connection_lost,
+                                    Events.cube_connection_lost)
 
     #### Public Methods ####
 
     def teardown(self):
         """All faces will be torn down by the world when no longer needed."""
-        self.robot.events.unsubscribe(
-            self._on_object_connection_state_changed,
-            Events.object_connection_state)
+        self.robot.events.unsubscribe(self._on_object_connection_state_changed,
+                                      Events.object_connection_state)
 
-        self.robot.events.unsubscribe(
-            self._on_object_moved,
-            Events.object_moved)
+        self.robot.events.unsubscribe(self._on_object_moved,
+                                      Events.object_moved)
 
-        self.robot.events.unsubscribe(
-            self._on_object_stopped_moving,
-            Events.object_stopped_moving)
+        self.robot.events.unsubscribe(self._on_object_stopped_moving,
+                                      Events.object_stopped_moving)
 
-        self.robot.events.unsubscribe(
-            self._on_object_up_axis_changed,
-            Events.object_up_axis_changed)
+        self.robot.events.unsubscribe(self._on_object_up_axis_changed,
+                                      Events.object_up_axis_changed)
 
-        self.robot.events.unsubscribe(
-            self._on_object_tapped,
-            Events.object_tapped)
+        self.robot.events.unsubscribe(self._on_object_tapped,
+                                      Events.object_tapped)
 
-        self.robot.events.unsubscribe(
-            self._on_object_observed,
-            Events.robot_observed_object)
+        self.robot.events.unsubscribe(self._on_object_observed,
+                                      Events.robot_observed_object)
 
-        self.robot.events.unsubscribe(
-            self._on_object_connection_lost,
-            Events.cube_connection_lost)
+        self.robot.events.unsubscribe(self._on_object_connection_lost,
+                                      Events.cube_connection_lost)
 
     @connection.on_connection_thread()
     async def set_light_corners(self,
@@ -875,7 +942,7 @@ class LightCube(ObservableObject):
                     cube = robot.world.connected_light_cube
                     print(f"{cube.descriptive_name}")
         """
-        return "{0} id={1} factory_id={2} is_connected={3}".format(self.__class__.__name__, self._object_id, self._factory_id, self._is_connected)
+        return f"{self.__class__.__name__}\nid={self._object_id}\nfactory_id={self._factory_id}\nis_connected={self._is_connected}"
 
     @property
     def object_id(self) -> int:
@@ -908,7 +975,7 @@ class LightCube(ObservableObject):
 
     #### Private Event Handlers ####
 
-    def _on_object_connection_state_changed(self, _, msg):
+    def _on_object_connection_state_changed(self, _robot, _event_type, msg):
         if msg.object_type == LIGHT_CUBE_1_TYPE:
             self._object_id = msg.object_id
 
@@ -923,7 +990,7 @@ class LightCube(ObservableObject):
                     self.logger.debug('Object disconnected: %s', self)
                 self._is_connected = msg.connected
 
-    def _on_object_moved(self, _, msg):
+    def _on_object_moved(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
             now = time.time()
             started_moving = not self._is_moving
@@ -938,7 +1005,7 @@ class LightCube(ObservableObject):
         else:
             self.logger.warning('An object not currently tracked by the world moved with id {0}'.format(msg.object_id))
 
-    async def _on_object_stopped_moving(self, _, msg):
+    async def _on_object_stopped_moving(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
             now = time.time()
             self._last_event_time = now
@@ -954,7 +1021,7 @@ class LightCube(ObservableObject):
         else:
             self.logger.warning('An object not currently tracked by the world stopped moving with id {0}'.format(msg.object_id))
 
-    def _on_object_up_axis_changed(self, _, msg):
+    def _on_object_up_axis_changed(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
 
             now = time.time()
@@ -965,7 +1032,7 @@ class LightCube(ObservableObject):
         else:
             self.logger.warning('Up Axis changed on an object not currently tracked by the world with id {0}'.format(msg.object_id))
 
-    def _on_object_tapped(self, _, msg):
+    def _on_object_tapped(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
 
             now = time.time()
@@ -975,7 +1042,7 @@ class LightCube(ObservableObject):
         else:
             self.logger.warning('Tapped an object not currently tracked by the world with id {0}'.format(msg.object_id))
 
-    def _on_object_observed(self, _, msg):
+    def _on_object_observed(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
 
             pose = util.Pose(x=msg.pose.x, y=msg.pose.y, z=msg.pose.z,
@@ -990,7 +1057,7 @@ class LightCube(ObservableObject):
 
             self._on_observed(pose, image_rect, msg.timestamp)
 
-    def _on_object_connection_lost(self, _, msg):
+    def _on_object_connection_lost(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
             self._is_connected = False
 
@@ -1018,18 +1085,16 @@ class Charger(ObservableObject):
 
         self._object_id = object_id
 
-        self.robot.events.subscribe(
-            self._on_object_observed,
-            Events.robot_observed_object)
+        self.robot.events.subscribe(self._on_object_observed,
+                                    Events.robot_observed_object)
 
     #### Public Methods ####
 
     def teardown(self):
         """All objects will be torn down by the world when the world closes."""
 
-        self.robot.events.unsubscribe(
-            self._on_object_observed,
-            Events.robot_observed_object)
+        self.robot.events.unsubscribe(self._on_object_observed,
+                                      Events.robot_observed_object)
 
     #### Properties ####
     @property
@@ -1061,9 +1126,26 @@ class Charger(ObservableObject):
             self.logger.debug("Setting object_id for %s to %s", self.__class__, value)
         self._object_id = value
 
+    @property
+    def descriptive_name(self) -> str:
+        """A descriptive name for this ObservableObject instance.
+
+        Note: Sub-classes should override this to add any other relevant info
+        for that object type.
+
+        .. testcode::
+
+            import anki_vector
+
+            with anki_vector.Robot() as robot:
+                if robot.world.charger:
+                    print(f"{robot.world.charger.descriptive_name}")
+        """
+        return f"{self.__class__.__name__} id={self._object_id}"
+
     #### Private Methods ####
 
-    def _on_object_observed(self, _, msg):
+    def _on_object_observed(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
 
             pose = util.Pose(x=msg.pose.x, y=msg.pose.y, z=msg.pose.z,
@@ -1083,6 +1165,8 @@ class CustomObjectArchetype():
 
     This defined object is given a size in the x,y and z axis. The dimensions
     of the markers on the object are also defined.
+
+    See :class:`CustomObjectMarkers`.
 
     When the robot observes custom objects, they will be linked to these archetypes.
     These can be created using the methods
@@ -1112,7 +1196,9 @@ class CustomObjectArchetype():
 
     @property
     def custom_type(self) -> protocol.CustomType:
-        """id of this archetype on the robot
+        """id of this archetype on the robot.
+
+        See :class:`CustomObjectMarkers`.
 
         .. testcode::
 
@@ -1127,6 +1213,8 @@ class CustomObjectArchetype():
     def x_size_mm(self) -> float:
         """Size of this object in its X axis, in millimeters.
 
+        See :class:`CustomObjectMarkers`.
+
         .. testcode::
 
             import anki_vector
@@ -1139,6 +1227,8 @@ class CustomObjectArchetype():
     @property
     def y_size_mm(self) -> float:
         """Size of this object in its Y axis, in millimeters.
+
+        See :class:`CustomObjectMarkers`.
 
         .. testcode::
 
@@ -1153,6 +1243,8 @@ class CustomObjectArchetype():
     def z_size_mm(self) -> float:
         """Size of this object in its Z axis, in millimeters.
 
+        See :class:`CustomObjectMarkers`.
+
         .. testcode::
 
             import anki_vector
@@ -1165,6 +1257,8 @@ class CustomObjectArchetype():
     @property
     def marker_width_mm(self) -> float:
         """Width in millimeters of the marker on this object.
+
+        See :class:`CustomObjectMarkers`.
 
         .. testcode::
 
@@ -1179,6 +1273,8 @@ class CustomObjectArchetype():
     def marker_height_mm(self) -> float:
         """Height in millimeters of the marker on this object.
 
+        See :class:`CustomObjectMarkers`.
+
         .. testcode::
 
             import anki_vector
@@ -1190,7 +1286,10 @@ class CustomObjectArchetype():
 
     @property
     def is_unique(self) -> bool:
-        """True if there should only be one of this object type in the world."""
+        """True if there should only be one of this object type in the world.
+
+        See :class:`CustomObjectMarkers`.
+        """
         return self._is_unique
 
     #### Private Methods ####
@@ -1215,6 +1314,8 @@ class CustomObject(ObservableObject):
     :meth:`~anki_vector.world.World.define_custom_box`.
     :meth:`~anki_vector.world.World.define_custom_cube`, or
     :meth:`~anki_vector.world.World.define_custom_wall`
+
+    See :class:`CustomObjectMarkers`.
     """
 
     def __init__(self,
@@ -1226,18 +1327,19 @@ class CustomObject(ObservableObject):
         self._object_id = object_id
         self._archetype = archetype
 
-        self.robot.events.subscribe(
-            self._on_object_observed,
-            Events.robot_observed_object)
+        self.robot.events.subscribe(self._on_object_observed,
+                                    Events.robot_observed_object)
 
     #### Public Methods ####
 
     def teardown(self):
-        """All objects will be torn down by the world when no longer needed."""
+        """All objects will be torn down by the world when no longer needed.
 
-        self.robot.events.unsubscribe(
-            self._on_object_observed,
-            Events.robot_observed_object)
+        See :class:`CustomObjectMarkers`.
+        """
+
+        self.robot.events.unsubscribe(self._on_object_observed,
+                                      Events.robot_observed_object)
 
     #### Properties ####
 
@@ -1246,6 +1348,8 @@ class CustomObject(ObservableObject):
         """The internal ID assigned to the object.
 
         This value can only be assigned once as it is static on the robot.
+
+        See :class:`CustomObjectMarkers`.
 
         .. testcode::
 
@@ -1280,6 +1384,8 @@ class CustomObject(ObservableObject):
     def archetype(self) -> CustomObjectArchetype:
         """Archetype defining this custom object's properties.
 
+        See :class:`CustomObjectMarkers`.
+
         .. testcode::
 
             import anki_vector
@@ -1302,6 +1408,8 @@ class CustomObject(ObservableObject):
     def descriptive_name(self) -> str:
         """A descriptive name for this CustomObject instance.
 
+        See :class:`CustomObjectMarkers`.
+
         .. testcode::
 
             import anki_vector
@@ -1318,8 +1426,7 @@ class CustomObject(ObservableObject):
                 for obj in robot.world.visible_custom_objects:
                     print('custom object seen with name: {0}'.format(obj.descriptive_name))
         """
-        # Specialization of ObservableObject's method to include the object type.
-        return "%s id=%d" % (self.archetype.object_type.name, self.object_id)
+        return "%s id=%d" % (self.__class__.__name__, self.object_id)
 
     #### Private Methods ####
 
@@ -1330,7 +1437,7 @@ class CustomObject(ObservableObject):
                 'z_size_mm={archetype.z_size_mm:.1f} '
                 'is_unique={archetype.is_unique}'.format(archetype=self._archetype))
 
-    def _on_object_observed(self, _, msg):
+    def _on_object_observed(self, _robot, _event_type, msg):
         if msg.object_id == self._object_id:
 
             pose = util.Pose(x=msg.pose.x, y=msg.pose.y, z=msg.pose.z,
@@ -1363,6 +1470,8 @@ class CustomObjectTypes():  # pylint: disable=too-few-public-methods
     :meth:`anki_vector.world.World.define_custom_box`,
     :meth:`anki_vector.world.World.define_custom_cube`, and
     :meth:`anki_vector.world.World.define_custom_wall`
+
+    See :class:`CustomObjectMarkers`.
 
     .. testcode::
 
@@ -1455,6 +1564,8 @@ class CustomObjectMarkers():  # pylint: disable=too-few-public-methods
     :meth:`anki_vector.world.World.define_custom_box`,
     :meth:`anki_vector.world.World.define_custom_cube`, and
     :meth:`anki_vector.world.World.define_custom_wall`
+
+    See :class:`CustomObject`.
 
     .. testcode::
 
